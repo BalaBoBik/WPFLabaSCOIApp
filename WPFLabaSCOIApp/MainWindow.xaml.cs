@@ -42,7 +42,7 @@ namespace WPFLabaSCOIApp
                     }
                     catch (Exception e)
                     {
-                        failed_images.Add(f.ToString());
+                        failed_images.Add(e.Message);
                     }
 
                 }

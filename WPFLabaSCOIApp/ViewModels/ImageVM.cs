@@ -6,12 +6,17 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace WPFLabaSCOIApp.ViewModels
 {
-    public class ImageVM
+    public class ImageVM : INotifyPropertyChanged
     {
+        public ImageVM()
+        {
+            SelectedOperation = Normal;
+        }
         private string _name;
         private BitmapSource _bitmap;
         private double _opacity = 1;
@@ -21,8 +26,8 @@ namespace WPFLabaSCOIApp.ViewModels
         private bool _g = true;
         private bool _b = true;
         private string _sizeString = "";
-        delegate BitmapSource Operetion(BitmapSource origin);
-
+        private Operation _selectedOperation { get; set; }
+        public delegate BitmapSource Operation(BitmapSource origin);
         public bool R
         {
             get { return _r; }
@@ -73,9 +78,22 @@ namespace WPFLabaSCOIApp.ViewModels
             get { return _opacity; }
             set
             {
-                _opacity = value;
+                _opacity = Math.Round(value,2);
                 OnPropertyChanged("Opacity");
             }
+        }
+        public int OpacityInPercent
+        {
+            get { return (int)(_opacity*100); }
+            set
+            {
+                _opacity = Math.Round((double)value / 100,2);
+                OnPropertyChanged("OpacityInPercent");
+            }
+        }
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Opacity = e.NewValue;
         }
         public BitmapSource Bitmap
         {
@@ -95,37 +113,85 @@ namespace WPFLabaSCOIApp.ViewModels
                 OnPropertyChanged("Name");
             }
         }
+        public Operation SelectedOperation
+        {
+            get { return _selectedOperation; }
+            set
+            {
+                _selectedOperation = value;
+                OnPropertyChanged("SelectedOperation");
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             if (PropertyChanged != null)
+            {
                 PropertyChanged(this, new PropertyChangedEventArgs(prop));
+                
+                
+            }
         }
-        private BitmapSource Normal(BitmapSource origin)
+
+        static public BitmapSource CreateEmptyBitmap(int width, int height)
         {
-            WriteableBitmap result= new WriteableBitmap(origin);
-            WriteableBitmap writeableBitmap = new WriteableBitmap(Bitmap);
-            var w = _bitmap.PixelWidth;
-            var h=_bitmap.PixelHeight;
+            PixelFormat pf = PixelFormats.Bgr32;
+            int rawStride = (width * pf.BitsPerPixel + 7) / 8;
+            byte[] rawImage = new byte[rawStride * height];
+            for (int i = 0; i < rawImage.Length; i++)
+            { rawImage[i] = 255; }
 
-            byte[] pixel = new byte[4]; // RGBA
-            byte[] newPixel = new byte[4];
+            // Create a BitmapSource.
+            return BitmapSource.Create(width, height,
+                96, 96, pf, null,
+                rawImage, rawStride);
 
-            for (int i=0; i < w;i++)
-                for(int j=0; j < h;j++)
-                {
-                    result.CopyPixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0); // копируем 1 пиксель в байтах
-                    writeableBitmap.CopyPixels(new Int32Rect(i, j, 1, 1), newPixel, 4, 0);
+        }
 
-                    pixel[0] =  newPixel[0]; // Blue
-                    pixel[1] = newPixel[1]; // Green
-                    pixel[2] = newPixel[2]; // Red
-                    pixel[3] = newPixel[3]; // Alpha
+        public BitmapSource OverlayOnBitmap(BitmapSource? origin)
+        {
+            if (origin != null)
+            {
+                WriteableBitmap result = new WriteableBitmap(origin);
+                WriteableBitmap writeableBitmap = new WriteableBitmap(Bitmap);
+                var w = Bitmap.PixelWidth;
+                var h = Bitmap.PixelHeight;
 
-                    result.WritePixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0);
-                }
-            return result;
+                byte[] pixel = new byte[4]; // RGBA
+                byte[] newPixel = new byte[4];
+
+                for (int i = 0; i < w; i++)
+                    for (int j = 0; j < h; j++)
+                    {
+                        result.CopyPixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0); // копируем 1 пиксель в байтах
+                        writeableBitmap.CopyPixels(new Int32Rect(i, j, 1, 1), newPixel, 4, 0);
+
+                        if (B)
+                            pixel[0] = (byte)(pixel[0] * (1 - Opacity) + newPixel[0] * Opacity); // Blue
+                        else
+                            pixel[0] = (byte)(pixel[0]);
+
+                        if (G)
+                            pixel[1] = (byte)(pixel[1] * (1 - Opacity) + newPixel[1] * Opacity); // Green
+                        else
+                            pixel[1] = (byte)(pixel[1]);
+
+                        if (R)
+                            pixel[2] = (byte)(pixel[2] * (1 - Opacity) + newPixel[2] * Opacity); // Red
+                        else
+                            pixel[2] = (byte)(pixel[2]);
+
+                        //pixel[3] = newPixel[3]; // Alpha
+
+                        result.WritePixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0);
+                    }
+                return result;
+            }
+            else
+            {
+                WriteableBitmap result
+            }
         }
     }
 }

@@ -12,7 +12,9 @@
             <ColumnDefinition Width="*"></ColumnDefinition>
             <ColumnDefinition Width="Auto"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="440" RenderTransformOrigin="-1.372,-0.927" Margin="10,10,0,0"/>
+        <InkCanvas>
+            <Image Source="{Binding FinalImage}" Grid.Column="0" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="440" RenderTransformOrigin="-1.372,-0.927" Margin="10,10,0,0"/>
+        </InkCanvas>
         <ScrollViewer Grid.Column="1">
             <ListBox Grid.Column="0" ItemsSource="{Binding Images}">
                 <ListBox.ItemTemplate>
@@ -54,10 +56,20 @@
                                     <TextBlock>OffsetY</TextBlock>
                                     <TextBox Text="{Binding OffsetY}"></TextBox>
                                 </StackPanel>
-                                <StackPanel Grid.Column="3" Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0,5,0">
-                                    <TextBlock>Opacity</TextBlock>
-                                    <Slider Value="{Binding Opacity}"></Slider>
-                                </StackPanel>
+                                <Grid Grid.Column="3" Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0,5,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Grid.Row="0">Opacity</TextBlock>
+                                    <TextBox  Grid.Column="1" Grid.Row="0" Text="{Binding OpacityInPercent}"></TextBox>
+                                    <Slider  Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"  Minimum="0" Maximum="100" Value="{Binding OpacityInPercent}" ></Slider>
+                                </Grid>
                                 <ComboBox Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="4" Margin="5,0,5,0"></ComboBox>
                             </Grid>
                             <Grid Grid.Column="1">
