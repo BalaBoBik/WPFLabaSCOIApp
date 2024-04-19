@@ -15,7 +15,7 @@ namespace WPFLabaSCOIApp.ViewModels
     {
         public ImageVM()
         {
-            SelectedOperation = Normal;
+            OverlayOperation = ByteOperation.getOperationsList().First((x) => x.Name=="Обычное");
         }
         private string _name;
         private BitmapSource _bitmap;
@@ -25,9 +25,9 @@ namespace WPFLabaSCOIApp.ViewModels
         private bool _r = true;
         private bool _g = true;
         private bool _b = true;
-        private string _sizeString = "";
-        private Operation _selectedOperation { get; set; }
-        public delegate BitmapSource Operation(BitmapSource origin);
+        private string _sizeString = ""; 
+        private ByteOperation _overlayOperation;
+       
         public bool R
         {
             get { return _r; }
@@ -113,13 +113,13 @@ namespace WPFLabaSCOIApp.ViewModels
                 OnPropertyChanged("Name");
             }
         }
-        public Operation SelectedOperation
+        public ByteOperation OverlayOperation
         {
-            get { return _selectedOperation; }
+            get { return _overlayOperation; }
             set
             {
-                _selectedOperation = value;
-                OnPropertyChanged("SelectedOperation");
+                _overlayOperation = value;
+                OnPropertyChanged("OverlayOperation");
             }
         }
 
@@ -149,49 +149,34 @@ namespace WPFLabaSCOIApp.ViewModels
 
         }
 
-        public BitmapSource OverlayOnBitmap(BitmapSource? origin)
+        public BitmapSource OverlayOnBitmap(BitmapSource origin)
         {
-            if (origin != null)
-            {
-                WriteableBitmap result = new WriteableBitmap(origin);
-                WriteableBitmap writeableBitmap = new WriteableBitmap(Bitmap);
-                var w = Bitmap.PixelWidth;
-                var h = Bitmap.PixelHeight;
 
-                byte[] pixel = new byte[4]; // RGBA
-                byte[] newPixel = new byte[4];
+            WriteableBitmap result = new WriteableBitmap(origin);
+            WriteableBitmap writeableBitmap = new WriteableBitmap(Bitmap);
+            var w = Bitmap.PixelWidth;
+            var h = Bitmap.PixelHeight;
 
-                for (int i = 0; i < w; i++)
-                    for (int j = 0; j < h; j++)
-                    {
-                        result.CopyPixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0); // копируем 1 пиксель в байтах
-                        writeableBitmap.CopyPixels(new Int32Rect(i, j, 1, 1), newPixel, 4, 0);
+            byte[] pixel = new byte[4]; // RGBA
+            byte[] newPixel = new byte[4];
 
-                        if (B)
-                            pixel[0] = (byte)(pixel[0] * (1 - Opacity) + newPixel[0] * Opacity); // Blue
-                        else
-                            pixel[0] = (byte)(pixel[0]);
+            for (int i = 0; i < w; i++)
+                for (int j = 0; j < h; j++)
+                {
+                    result.CopyPixels(new Int32Rect(i+OffsetX, j+OffsetY, 1, 1), pixel, 4, 0); // копируем 1 пиксель в байтах
+                    writeableBitmap.CopyPixels(new Int32Rect(i, j, 1, 1), newPixel, 4, 0);
 
-                        if (G)
-                            pixel[1] = (byte)(pixel[1] * (1 - Opacity) + newPixel[1] * Opacity); // Green
-                        else
-                            pixel[1] = (byte)(pixel[1]);
+                    pixel[0] = OverlayOperation.SelectedOperation(pixel[0], newPixel[0], Opacity, B);// Blue
 
-                        if (R)
-                            pixel[2] = (byte)(pixel[2] * (1 - Opacity) + newPixel[2] * Opacity); // Red
-                        else
-                            pixel[2] = (byte)(pixel[2]);
+                    pixel[1] = OverlayOperation.SelectedOperation(pixel[1], newPixel[1], Opacity, G); // Green
 
-                        //pixel[3] = newPixel[3]; // Alpha
+                    pixel[2] = OverlayOperation.SelectedOperation(pixel[2], newPixel[2], Opacity, R); // Red
 
-                        result.WritePixels(new Int32Rect(i, j, 1, 1), pixel, 4, 0);
-                    }
-                return result;
-            }
-            else
-            {
-                WriteableBitmap result
-            }
+                    //pixel[3] = newPixel[3]; // Alpha
+
+                    result.WritePixels(new Int32Rect(i+OffsetX, j+OffsetY, 1, 1), pixel, 4, 0);
+                }
+            return result;
         }
     }
 }

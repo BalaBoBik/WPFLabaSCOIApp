@@ -20,6 +20,7 @@ namespace WPFLabaSCOIApp.ViewModels
     {
 
         private BitmapSource _finalImage;
+
         private ICommand moveUpCommand;
         private ICommand moveDownCommand;
         private ICommand deleteCommand;
@@ -47,7 +48,7 @@ namespace WPFLabaSCOIApp.ViewModels
             {
                 if (prop_name.PropertyName == nameof(ImageVM.Opacity)
                     || prop_name.PropertyName == nameof(ImageVM.OpacityInPercent)
-                    || prop_name.PropertyName == nameof(ImageVM.SelectedOperation)
+                    || prop_name.PropertyName == nameof(ImageVM.OverlayOperation)
                     || prop_name.PropertyName == nameof(ImageVM.OffsetX)
                     || prop_name.PropertyName == nameof(ImageVM.OffsetY)
                     || prop_name.PropertyName == nameof(ImageVM.R)
@@ -68,11 +69,13 @@ namespace WPFLabaSCOIApp.ViewModels
                         if (FinalImage == null)
                             FinalImage = newImage.Bitmap;
                         else
-                            FinalImage = newImage.Normal(FinalImage);
+                        {
+                            UpdateImage();
+                        }
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    if (e.OldItems.Count <1)
+                    if (Images.Count <1)
                         FinalImage = null;
                     else
                         UpdateImage();
@@ -90,10 +93,10 @@ namespace WPFLabaSCOIApp.ViewModels
         {
             int w = Images.Max(x => x.Bitmap.PixelWidth + x.OffsetX);
             int h = Images.Max(x => x.Bitmap.PixelHeight + x.OffsetY);
-            BitmapSource result = ImageVM.CreateEmptyBitmap(w, h);
+            BitmapSource result = ImageVM.CreateEmptyBitmap(w,h);
             for (int i=0;i<Images.Count;i++)
             {
-                result = Images[i].SelectedOperation(result);
+                result = Images[i].OverlayOnBitmap(result);
             }
             return result;
         }
@@ -101,7 +104,8 @@ namespace WPFLabaSCOIApp.ViewModels
         {
             FinalImage = CalculateLayers();
         }
-        
+        public List<ByteOperation> OperationsList => ByteOperation.getOperationsList();
+
         public ICommand MoveUpCommand
         {
             get

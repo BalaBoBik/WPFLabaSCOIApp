@@ -70,7 +70,7 @@
                                     <TextBox  Grid.Column="1" Grid.Row="0" Text="{Binding OpacityInPercent}"></TextBox>
                                     <Slider  Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"  Minimum="0" Maximum="100" Value="{Binding OpacityInPercent}" ></Slider>
                                 </Grid>
-                                <ComboBox Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="4" Margin="5,0,5,0"></ComboBox>
+                                <ComboBox ItemsSource="{Binding Path = DataContext.OperationsList, RelativeSource={RelativeSource AncestorType=Window}}" DisplayMemberPath="Name"  SelectedValue="{Binding OverlayOperation}"  Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="4" Margin="5,0,5,0"></ComboBox>
                             </Grid>
                             <Grid Grid.Column="1">
                                 <Grid.RowDefinitions>
