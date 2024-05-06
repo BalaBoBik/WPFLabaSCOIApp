@@ -12,10 +12,16 @@
             <ColumnDefinition Width="*"></ColumnDefinition>
             <ColumnDefinition Width="Auto"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <InkCanvas>
-            <Image Source="{Binding FinalImage}" Grid.Column="0" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="440" RenderTransformOrigin="-1.372,-0.927" Margin="10,10,0,0"/>
-        </InkCanvas>
-        <ScrollViewer Grid.Column="1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20px" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Button Click="OpenGradationTransformWindow">Градационные преобразования</Button>
+        </StackPanel>
+        <Image Source="{Binding FinalImage}" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="440" RenderTransformOrigin="-1.372,-0.927" Margin="10,10,0,0"/>
+        <ScrollViewer Grid.Column="1" Grid.Row="1">
             <ListBox Grid.Column="0" ItemsSource="{Binding Images}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>

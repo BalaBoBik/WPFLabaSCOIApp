@@ -1,4 +1,7 @@
-﻿using System;
+﻿using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using WPFLabaSCOIApp.ViewModels;
 
 namespace WPFLabaSCOIApp.Windows
 {
@@ -19,9 +23,13 @@ namespace WPFLabaSCOIApp.Windows
     /// </summary>
     public partial class GradationTransformWindow : Window
     {
-        public GradationTransformWindow()
+        private GradationTransformWindowVM vm;
+        public GradationTransformWindow(BitmapSource image)
         {
             InitializeComponent();
+            vm = new GradationTransformWindowVM(image);
+            DataContext = vm;
         }
+        public PlotModel GraphModel { get; set; }
     }
 }

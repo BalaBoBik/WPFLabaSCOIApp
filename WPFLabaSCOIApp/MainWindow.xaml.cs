@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WPFLabaSCOIApp.ViewModels;
+using WPFLabaSCOIApp.Windows;
 
 
 namespace WPFLabaSCOIApp
@@ -59,6 +60,18 @@ namespace WPFLabaSCOIApp
                 }
             };
 
+        }
+        public void OpenGradationTransformWindow(object sender, RoutedEventArgs e)
+        {
+            if (vm.FinalImage != null)
+            {
+                GradationTransformWindow gradationTransformWindow = new GradationTransformWindow(vm.FinalImage);
+                gradationTransformWindow.Show();
+            }
+            else
+            {
+                MessageBox.Show("Нельзя применить градационное преобразование для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
