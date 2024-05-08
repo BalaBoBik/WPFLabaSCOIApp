@@ -25,7 +25,7 @@ namespace WPFLabaSCOIApp.ViewModels
                         if (flag)
                             return (byte)(oldByte * (1 - opacity) + newByte * opacity);
                         else
-                            return (byte)(oldByte * (1 - opacity));
+                            return (byte)(oldByte);
                     }
                 },
 

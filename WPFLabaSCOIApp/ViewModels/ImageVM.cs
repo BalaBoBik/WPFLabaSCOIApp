@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 
 namespace WPFLabaSCOIApp.ViewModels
 {
@@ -152,30 +153,42 @@ namespace WPFLabaSCOIApp.ViewModels
         public BitmapSource OverlayOnBitmap(BitmapSource origin)
         {
 
-            WriteableBitmap result = new WriteableBitmap(origin);
-            WriteableBitmap writeableBitmap = new WriteableBitmap(Bitmap);
             var w = Bitmap.PixelWidth;
             var h = Bitmap.PixelHeight;
+            //Ориг в байты
+            int stride = (int)origin.PixelWidth * (origin.Format.BitsPerPixel / 8);
+            byte[] pixels = new byte[(int)origin.PixelHeight * stride];
 
-            byte[] pixel = new byte[4]; // RGBA
-            byte[] newPixel = new byte[4];
+            origin.CopyPixels(pixels, stride, 0);
+            //Накладываемое изображение в байты
+            int newStride = (int)Bitmap.PixelWidth * (Bitmap.Format.BitsPerPixel / 8);
+            byte[] newPixels = new byte[(int)Bitmap.PixelHeight * newStride];
 
-            for (int i = 0; i < w; i++)
-                for (int j = 0; j < h; j++)
+            Bitmap.CopyPixels(newPixels, newStride, 0);
+
+            int pixelIndex = 0;
+            int newPixelIndex = 0;
+            for (int j = 0; j < h * 4; j += 4)
+            {
+                for (int i = 0; i < w * 4; i += 4)
                 {
-                    result.CopyPixels(new Int32Rect(i+OffsetX, j+OffsetY, 1, 1), pixel, 4, 0); // копируем 1 пиксель в байтах
-                    writeableBitmap.CopyPixels(new Int32Rect(i, j, 1, 1), newPixel, 4, 0);
+                    try
+                    {
+                        pixels[pixelIndex] = OverlayOperation.SelectedOperation(pixels[pixelIndex], newPixels[newPixelIndex], Opacity, B);
+                        pixels[pixelIndex + 1] = OverlayOperation.SelectedOperation(pixels[pixelIndex + 1], newPixels[newPixelIndex + 1], Opacity, G);
+                        pixels[pixelIndex + 2] = OverlayOperation.SelectedOperation(pixels[pixelIndex + 2], newPixels[newPixelIndex + 2], Opacity, R);
+                    }
+                    catch 
+                    {
 
-                    pixel[0] = OverlayOperation.SelectedOperation(pixel[0], newPixel[0], Opacity, B);// Blue
-
-                    pixel[1] = OverlayOperation.SelectedOperation(pixel[1], newPixel[1], Opacity, G); // Green
-
-                    pixel[2] = OverlayOperation.SelectedOperation(pixel[2], newPixel[2], Opacity, R); // Red
-
-                    //pixel[3] = newPixel[3]; // Alpha
-
-                    result.WritePixels(new Int32Rect(i+OffsetX, j+OffsetY, 1, 1), pixel, 4, 0);
+                        MessageBox.Show($"{pixelIndex}\n{i} ; {j}");
+                    }
+                    pixelIndex += 4;
+                    newPixelIndex += 4;
                 }
+                pixelIndex = j * origin.PixelWidth;
+            }
+            var result = BitmapSource.Create(origin.PixelWidth, origin.PixelHeight,origin.DpiX, origin.DpiY, origin.Format, null,pixels, stride);
             return result;
         }
     }

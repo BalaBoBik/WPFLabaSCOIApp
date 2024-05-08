@@ -14,32 +14,180 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot;
 using System.Collections.Immutable;
+using System.Windows.Input;
+using WPFLabaSCOIApp.Models;
+using System.Collections.Specialized;
+using System.Windows;
+using System.CodeDom;
+using System.Reflection;
 namespace WPFLabaSCOIApp.ViewModels
 {
     internal class GradationTransformWindowVM : INotifyPropertyChanged
     {
         public GradationTransformWindowVM(BitmapSource image)
         {
-            Points.Add(new Point(-1, -1));
-            Points.Add(new Point(0, 0));
-            Points.Add(new Point(30, 60));
-            Points.Add(new Point(255, 255));
-            Points.Add(new Point(256, 256));
-            Points.OrderBy(x => x.X);
+            AddPointVM(new PointVM(0, 0));
+            AddPointVM(new PointVM(255, 255));
             Bitmap = image;
-            GraphModel = CreatePlotModel();
+            GraphModel = UpdatePlotModel();
+            Points.CollectionChanged += Points_CollectionChanged;
+            _newPoint = new System.Drawing.Point(1,1);
         }
+        private ICommand deleteCommand;
+        private ICommand addCommand;
         private BitmapSource _bitmap;
-        public PlotModel GraphModel { get; set; }
-        public BitmapSource Bitmap 
+        private PlotModel _graphModel;
+        private new System.Drawing.Point _newPoint;
+        public PlotModel GraphModel
+        {
+            get { return _graphModel; }
+            set
+            {
+                _graphModel = value;
+                OnPropertyChanged("GraphModel");
+            }
+        }
+        public BitmapSource Bitmap
         {
             get { return _bitmap; }
-            set { 
+            set {
                 _bitmap = value;
                 OnPropertyChanged("Bitmap");
             }
         }
-        public ObservableCollection<Point> Points { get; set; } = new ObservableCollection<Point>();
+        public int NewPointX
+        {
+            get { return _newPoint.X; }
+            set
+            {
+                _newPoint.X = value;
+                OnPropertyChanged("NewPointX");
+            }
+        }
+        public int NewPointY
+        {
+            get { return _newPoint.Y; }
+            set
+            {
+                _newPoint.Y = value;
+                OnPropertyChanged("NewPointY");
+            }
+        }
+        public ObservableCollection<PointVM> Points { get; set; } = new ObservableCollection<PointVM>();
+
+        void Points_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    if (e.NewItems?[0] is PointVM newPoint)
+                    {
+                        GraphModel = UpdatePlotModel();
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    GraphModel = UpdatePlotModel();
+                    break;
+                case NotifyCollectionChangedAction.Replace:
+                    break;
+                case NotifyCollectionChangedAction.Move:
+                    break;
+                default:
+                    GraphModel = UpdatePlotModel();
+                    break;
+            }
+        }
+
+        public void AddPointVM(PointVM pointVM)
+        {
+            Points.Add(pointVM);
+            pointVM.PropertyChanged += (s, prop_name) =>
+            {
+                if (prop_name.PropertyName == nameof(PointVM.X)
+                    || prop_name.PropertyName == nameof(PointVM.Y))
+                {
+                    GraphModel = UpdatePlotModel();
+                }
+            };
+        }
+        public void InsertPointVM(int index, PointVM pointVM)
+        {
+            Points.Insert(index, pointVM);
+            pointVM.PropertyChanged += (s, prop_name) =>
+            {
+                if (prop_name.PropertyName == nameof(PointVM.X)
+                    || prop_name.PropertyName == nameof(PointVM.Y))
+                {
+                    GraphModel = UpdatePlotModel();
+                }
+            };
+        }
+        public double Interpolation(double xValue) // Линейная
+        {
+            PointVM point1 = new PointVM();
+            PointVM point2 = new PointVM();
+            for(int i = 1;  i < Points.Count; i++) 
+            {
+                if ((Points[i-1].X <= xValue) && (Points[i].X>xValue))
+                {
+                    point1 = Points[i - 1];
+                    point2 = Points[i];
+                    break;
+                }
+            }
+            double result = point1.Y + (xValue- point1.X)*(point2.Y-point1.Y)/(point2.X-point1.X);
+            return result;
+
+        }
+
+        private PlotModel UpdatePlotModel()
+        {
+            var plotModel = new PlotModel();
+            plotModel.Series.Add(new FunctionSeries(x => Interpolation(x), 0, 255, 0.1));
+            return plotModel;
+        }
+
+        public ICommand DeleteCommand
+        {
+            get
+            {
+                return deleteCommand ??= new RelayCommand(t => true, (obj) => 
+                {
+                    var point = obj as PointVM;
+                    if ((point.X == 0) || (point.X == 255))
+                        MessageBox.Show("!!!Нельзя удалять краевые точки!!!");
+                    else
+                        Points.Remove(point);
+                });
+            }
+        }
+        public ICommand AddCommand
+        {
+            get
+            {
+                return addCommand ??= new RelayCommand(t => true, (obj) =>
+                {
+                    var pointVM = new PointVM(_newPoint.X, _newPoint.Y);
+
+                    int index = 0;
+                    for (int i = 1; i < Points.Count; i++)
+                    {
+                        if ((Points[i - 1].X < pointVM.X) && (Points[i].X > pointVM.X))
+                        {
+                            index = i; break;
+                        }
+                    }
+                    if(index == 0)
+                    {
+                        MessageBox.Show
+                        ("Были введены значения выходдящие за диапазон от 0 до 255\n" +
+                            "или была введена точка с уже занятой координатой X");
+                    }
+                    else
+                        InsertPointVM(index, pointVM);
+                });
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName] string prop = "")
@@ -48,33 +196,6 @@ namespace WPFLabaSCOIApp.ViewModels
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(prop));
             }
-        }
-        public double Interpolation(double xValue)
-        {
-            Point point = Points.FirstOrDefault(x => x.X >= xValue);
-            int index = Points.IndexOf(point);
-            return CubicInterpolate(Points[index - 2], Points[index-1], Points[index], Points[index + 1], xValue);
-            
-        }
-        public static double CubicInterpolate(Point point0, Point point1, Point point2, Point point3, double x)
-        {
-            double a0, a1, a2, a3, y;
-
-            a0 = point3.Y / ((point3.X - point0.X) * (point3.X - point1.X) * (point3.X - point2.X));
-            a1 = point2.Y / ((point2.X - point0.X) * (point2.X - point1.X) * (point2.X - point3.X));
-            a2 = point1.Y / ((point1.X - point0.X) * (point1.X - point2.X) * (point1.X - point3.X));
-            a3 = point0.Y / ((point0.X - point1.X) * (point0.X - point2.X) * (point0.X - point3.X));
-
-            y = a0 * x * x * x + a1 * x * x + a2 * x + a3;
-
-            return y;
-        }
-
-        private PlotModel CreatePlotModel()
-        {
-            var plotModel = new PlotModel();
-            plotModel.Series.Add(new FunctionSeries(x => Interpolation(x), 1, 254, 0.1));
-            return plotModel;
         }
     }
 }
