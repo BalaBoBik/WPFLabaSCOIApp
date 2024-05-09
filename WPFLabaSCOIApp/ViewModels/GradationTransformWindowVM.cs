@@ -28,15 +28,17 @@ namespace WPFLabaSCOIApp.ViewModels
         {
             AddPointVM(new PointVM(0, 0));
             AddPointVM(new PointVM(255, 255));
-            Bitmap = image;
-            GraphModel = UpdatePlotModel();
+            _origin = image;
             Points.CollectionChanged += Points_CollectionChanged;
             _newPoint = new System.Drawing.Point(1,1);
+            UpdateAll();
         }
         private ICommand deleteCommand;
         private ICommand addCommand;
+        private BitmapSource _origin;
         private BitmapSource _bitmap;
         private PlotModel _graphModel;
+        private int[] _histogramData;
         private new System.Drawing.Point _newPoint;
         public PlotModel GraphModel
         {
@@ -53,6 +55,16 @@ namespace WPFLabaSCOIApp.ViewModels
             set {
                 _bitmap = value;
                 OnPropertyChanged("Bitmap");
+            }
+        }
+        public BitmapSource Origin { get { return _origin; } }
+        public int[] HistogramData
+        {
+            get { return _histogramData; }
+            set 
+            {
+                _histogramData = value;
+                OnPropertyChanged("HistogramData");
             }
         }
         public int NewPointX
@@ -82,18 +94,18 @@ namespace WPFLabaSCOIApp.ViewModels
                 case NotifyCollectionChangedAction.Add:
                     if (e.NewItems?[0] is PointVM newPoint)
                     {
-                        GraphModel = UpdatePlotModel();
+                        UpdateAll();
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    GraphModel = UpdatePlotModel();
+                    UpdateAll();
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 default:
-                    GraphModel = UpdatePlotModel();
+                    UpdateAll();
                     break;
             }
         }
@@ -106,7 +118,7 @@ namespace WPFLabaSCOIApp.ViewModels
                 if (prop_name.PropertyName == nameof(PointVM.X)
                     || prop_name.PropertyName == nameof(PointVM.Y))
                 {
-                    GraphModel = UpdatePlotModel();
+                    UpdateAll();
                 }
             };
         }
@@ -118,7 +130,7 @@ namespace WPFLabaSCOIApp.ViewModels
                 if (prop_name.PropertyName == nameof(PointVM.X)
                     || prop_name.PropertyName == nameof(PointVM.Y))
                 {
-                    GraphModel = UpdatePlotModel();
+                    UpdateAll();
                 }
             };
         }
@@ -139,12 +151,60 @@ namespace WPFLabaSCOIApp.ViewModels
             return result;
 
         }
-
+        private void UpdateAll() 
+        {
+            GraphModel = UpdatePlotModel();
+            Bitmap = Transform(Origin);
+            HistogramData = CalculateHistogramData(Bitmap);
+        }
         private PlotModel UpdatePlotModel()
         {
             var plotModel = new PlotModel();
             plotModel.Series.Add(new FunctionSeries(x => Interpolation(x), 0, 255, 0.1));
+
             return plotModel;
+        }
+
+        private int[] CalculateHistogramData(BitmapSource image)
+        {
+            int[] result = new int[256];
+            int w = image.PixelWidth;
+            int h = image.PixelHeight;
+            int stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+            byte[] pixels = new byte[(int)image.PixelHeight * stride];
+
+            image.CopyPixels(pixels, stride, 0);
+            for (int j = 0; j < h * 4; j += 4)
+                for (int i = 0; i < w * 4; i += 4)
+                {
+                    result[pixels[j * w + i]]++;
+                    result[pixels[j * w + i + 1 ]]++;
+                    result[pixels[j * w + i + 2 ]]++;
+                }
+            int max = result.Max();
+            for(int i = 0; i < 256; i++)
+            {
+                result[i] = result[i]*200/max+1;
+            }
+            return result;
+        }
+        private BitmapSource Transform(BitmapSource image)
+        {
+            int w = image.PixelWidth;
+            int h = image.PixelHeight;
+
+            int stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+            byte[] pixels = new byte[(int)image.PixelHeight * stride];
+            image.CopyPixels(pixels, stride, 0);
+            for (int j = 0; j < h * 4; j += 4)
+                for (int i = 0; i < w * 4; i += 4)
+                {
+                    pixels[j * w + i] = (byte)Math.Round(Interpolation(pixels[j * w + i]), 0);
+                    pixels[j * w + i + 1] = (byte)Math.Round(Interpolation(pixels[j * w + i + 1]), 0);
+                    pixels[j * w + i + 2] = (byte)Math.Round(Interpolation(pixels[j * w + i + 2]), 0);
+                }
+            var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, pixels, stride);
+            return result;
         }
 
         public ICommand DeleteCommand
