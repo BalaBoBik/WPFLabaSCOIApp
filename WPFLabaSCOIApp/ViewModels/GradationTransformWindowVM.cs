@@ -165,7 +165,7 @@ namespace WPFLabaSCOIApp.ViewModels
             return plotModel;
         }
 
-        private int[] CalculateHistogramData(BitmapSource image)
+        public static int[] CalculateHistogramData(BitmapSource image)
         {
             int[] result = new int[256];
             int w = image.PixelWidth;
@@ -255,6 +255,7 @@ namespace WPFLabaSCOIApp.ViewModels
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(prop));
+
             }
         }
     }

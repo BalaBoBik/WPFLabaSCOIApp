@@ -73,5 +73,17 @@ namespace WPFLabaSCOIApp
                 MessageBox.Show("Нельзя применить градационное преобразование для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public void OpenBinarizationWindow(object sender, RoutedEventArgs e)
+        {
+            if (vm.FinalImage != null)
+            {
+                BinarizationWindow BinarizationWindow = new BinarizationWindow(vm.FinalImage);
+                BinarizationWindow.Show();
+            }
+            else
+            {
+                MessageBox.Show("Нельзя применить бинаризацию для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }
