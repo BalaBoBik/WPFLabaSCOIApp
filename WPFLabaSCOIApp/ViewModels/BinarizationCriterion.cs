@@ -213,11 +213,11 @@ namespace WPFLabaSCOIApp.ViewModels
                         values.Clear();
                         sigma= 0;
                         t= 0;
-                        for (int y = (int)(j - windowSize / 2); y <= (int)(j + windowSize / 2); y++)
-                            for (int x = (int)(i - windowSize / 2); x <= (int)(i + windowSize / 2); x++)
+                        for (int y = (int)(j - 4*(windowSize / 2)); y <= (int)(j + 4*(windowSize / 2)); y+=4)
+                            for (int x = (int)(i - 4*(windowSize / 2)); x <= (int)(i + 4*(windowSize / 2)); x+=4)
                             {
-                                if ((0 <= y) && (y < h))
-                                    if ((0 <= x) && (x < w))
+                                if ((0 <= y) && (y < h*4))
+                                    if ((0 <= x) && (x < w*4))
                                     {
                                         values.Add(pixels[y * w + x]);
                                     }

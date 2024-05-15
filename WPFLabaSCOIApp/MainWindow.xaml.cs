@@ -85,5 +85,17 @@ namespace WPFLabaSCOIApp
                 MessageBox.Show("Нельзя применить бинаризацию для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public void LinearFiltratingWindow(object sender, RoutedEventArgs e)
+        {
+            if (vm.FinalImage != null)
+            {
+                LinearFiltratingWindow LinearFiltratingWindow = new LinearFiltratingWindow(vm.FinalImage);
+                LinearFiltratingWindow.Show();
+            }
+            else
+            {
+                MessageBox.Show("Нельзя применить линейную фильтрацию для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

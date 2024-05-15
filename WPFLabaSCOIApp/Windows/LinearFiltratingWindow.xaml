@@ -1,0 +1,47 @@
+﻿<Window x:Class="WPFLabaSCOIApp.Windows.LinearFiltratingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPFLabaSCOIApp.Windows"
+        mc:Ignorable="d"
+        Title="LinearFiltratingWindow" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Image Source="{Binding Bitmap}" Grid.Row="0" />
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition />
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <TextBlock Text="Ширина:"/>
+                <TextBox Text="{Binding MatrixWidth}" MinWidth="40" Margin="0,0,20,0"></TextBox>
+                <TextBlock Text="Высота:"/>
+                <TextBox Text="{Binding MatrixHeight}" MinWidth="40" Margin="0,0,20,0"></TextBox>
+                <TextBlock Text="σ:"/>
+                <TextBox Text="{Binding Sigma}" MinWidth="40" Margin="0,0,20,0"></TextBox>
+                <Button MinWidth="40" Margin="0,0,20,0" Command="{Binding Path=DataContext.GaussDistributionCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">Заполнить по распределению Гаусса</Button>
+                <Button MinWidth="40" Margin="0,0,20,0" Command="{Binding Path=DataContext.SimpleDistributionCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">Заполнить</Button>
+            </StackPanel>
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Matrix}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="{Binding MatrixWidth}"></UniformGrid>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBox  Width="60" Height="20" Text="{Binding Value, Mode=TwoWay}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Grid.Row="2" Command="{Binding Path=DataContext.ApplyMaskCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">Применить маску</Button>
+        </Grid>
+    </Grid>
+</Window>
