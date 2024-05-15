@@ -143,53 +143,7 @@ namespace WPFLabaSCOIApp.ViewModels
             var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, newPixels, stride);
             return result;
         }
-        public BitmapSource ApplyMedianFiltering(BitmapSource image)
-        {
-            int w = image.PixelWidth;
-            int h = image.PixelHeight;
-
-            int stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
-            byte[] pixels = new byte[(int)image.PixelHeight * stride];
-            image.CopyPixels(pixels, stride, 0);
-
-            stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
-            byte[] newPixels = new byte[(int)image.PixelHeight * stride];
-
-            for (int j = 0; j < h * 4; j += 4)
-                for (int i = 0; i < w * 4; i++)
-                {
-                    if ((j * w + i) % 4 != 3)
-                    {
-                        for (int y = 0; y < MatrixHeight; y++)
-                        {
-                            yy = j + 4 * (y - (MatrixHeight / 2));
-                            if (yy < 0)
-                                yy = Math.Abs(yy);
-                            else if (yy >= 4 * h)
-                                yy = j - 4 * (y - (MatrixHeight / 2));
-
-                            for (int x = 0; x < MatrixWidth; x++)
-                            {
-                                xx = i + 4 * (x - (MatrixWidth / 2));
-                                if (xx < 0)
-                                    xx = Math.Abs(xx);
-                                else if (xx >= 4 * w)
-                                    xx = i - 4 * (x - (MatrixWidth / 2));
-                                int a = pixels[yy * w + xx];
-                                double b = Matrix[y * MatrixWidth + x].Value;
-                                newByte += (b * a);
-                            }
-                        }
-                        newPixels[j * w + i] = (byte)Math.Round(newByte, 0);
-                    }
-                    else
-                    {
-                        newPixels[j * w + i] = pixels[j * w + i];
-                    }
-                }
-            var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, newPixels, stride);
-            return result;
-        }
+       
         public static DoubleValue[] SimpleDistribution(int w, int h)
         {
             DoubleValue[] result = new DoubleValue[w * h];
