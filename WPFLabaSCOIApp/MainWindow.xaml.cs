@@ -97,5 +97,17 @@ namespace WPFLabaSCOIApp
                 MessageBox.Show("Нельзя применить линейную фильтрацию для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public void FurieImageWindow(object sender, RoutedEventArgs e)
+        {
+            if (vm.FinalImage != null)
+            {
+                FurieImageWindow FurieImageWindow = new FurieImageWindow(vm.FinalImage);
+                FurieImageWindow.Show();
+            }
+            else
+            {
+                MessageBox.Show("Нельзя применить линейную фильтрацию для пустого изображения", "Error in images", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

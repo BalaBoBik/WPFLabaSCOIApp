@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows;
 using System.Windows.Input;
 using WPFLabaSCOIApp.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WPFLabaSCOIApp.ViewModels
 {
@@ -33,6 +34,7 @@ namespace WPFLabaSCOIApp.ViewModels
         private ICommand gaussDistributionCommand;
         private ICommand applyMaskCommand;
         private ICommand simpleDistributionCommand;
+        private ICommand applyMedianFilteringCommand;
 
         public BitmapSource Origin { get { return _origin; } }
         public BitmapSource Bitmap
@@ -91,7 +93,72 @@ namespace WPFLabaSCOIApp.ViewModels
             }
         }
 
+        public byte Median (List<byte> bytes)
+        {
+            bytes.Sort();
+            byte median;
+            if (bytes.Count % 2 == 0)
+            {
+                median = (byte)(Math.Round((bytes[bytes.Count / 2 - 1] + bytes[bytes.Count / 2]) / 2.0, 0));
+            }
+            else
+            {
+                median = bytes[bytes.Count / 2];
+            }
 
+            return median;
+        }
+        public BitmapSource ApplyMedianFiltering(BitmapSource image)
+        {
+            int w = image.PixelWidth;
+            int h = image.PixelHeight;
+
+            int stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+            byte[] pixels = new byte[(int)image.PixelHeight * stride];
+            image.CopyPixels(pixels, stride, 0);
+
+            stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+            byte[] newPixels = new byte[(int)image.PixelHeight * stride];
+            List<byte> R= new List<byte>();
+            List<byte> G = new List<byte>();
+            List<byte> B = new List<byte>();
+            int yy;
+            int xx;
+            for (int j = 0; j < h * 4; j += 4)
+                for (int i = 0; i < w * 4; i += 4)
+                {
+                    B = new List<byte>();
+                    G = new List<byte>();
+                    R = new List<byte>();
+                    for (int y = 0; y < MatrixHeight; y++)
+                    {
+                        yy = j + 4 * (y - (MatrixHeight / 2));
+                        if (yy < 0)
+                            yy = Math.Abs(yy);
+                        else if (yy >= 4 * h)
+                            yy = j - 4 * (y - (MatrixHeight / 2));
+
+                        for (int x = 0; x < MatrixWidth; x++)
+                        {
+                            xx = i + 4 * (x - (MatrixWidth / 2));
+                            if (xx < 0)
+                                xx = Math.Abs(xx);
+                            else if (xx >= 4 * w)
+                                xx = i - 4 * (x - (MatrixWidth / 2));
+
+                            B.Add(pixels[yy * w + xx + 0]);
+                            G.Add(pixels[yy * w + xx + 1]);
+                            R.Add(pixels[yy * w + xx + 2]);
+                        }
+                    }
+                    newPixels[j * w + i + 0] = Median(B);
+                    newPixels[j * w + i + 1] = Median(G);
+                    newPixels[j * w + i + 2] = Median(R);
+
+                }
+            var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, newPixels, stride);
+            return result;
+        }
         public BitmapSource ApplyMask(BitmapSource image)
         {
             int w = image.PixelWidth;
@@ -103,47 +170,46 @@ namespace WPFLabaSCOIApp.ViewModels
 
             stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
             byte[] newPixels = new byte[(int)image.PixelHeight * stride];
-            double newByte;
+            double[] newBytes = new double [3];
             int yy;
             int xx;
 
             for (int j = 0; j < h * 4; j += 4)
-                for (int i = 0; i < w * 4; i++)
+                for (int i = 0; i < w * 4; i += 4)
                 {
-                    if ((j * w + i) % 4 != 3)
+                    newBytes = new double[] { 0.0, 0.0, 0.0 };
+                    for (int y = 0; y < MatrixHeight; y++)
                     {
-                        newByte = 0;
-                        for (int y = 0; y < MatrixHeight; y++)
+                        yy = j + 4 * (y - (MatrixHeight / 2));
+                        if (yy < 0)
+                            yy = Math.Abs(yy);
+                        else if (yy >= 4 * h)
+                            yy = j - 4 * (y - (MatrixHeight / 2));
+                        for (int x = 0; x < MatrixWidth; x++)
                         {
-                            yy = j + 4 * (y - (MatrixHeight / 2));
-                            if (yy < 0)
-                                yy = Math.Abs(yy);
-                            else if (yy >= 4 * h)
-                                yy = j - 4 * (y - (MatrixHeight / 2));
-
-                            for (int x = 0; x < MatrixWidth; x++)
-                            {
-                                xx = i + 4 * (x - (MatrixWidth / 2));
-                                if (xx < 0)
-                                    xx = Math.Abs(xx);
-                                else if (xx >= 4 * w)
+                            xx = i + 4 * (x - (MatrixWidth / 2));
+                            if (xx < 0)
+                                xx = Math.Abs(xx);
+                            else if (xx >= 4 * w)
                                 xx = i - 4 * (x - (MatrixWidth / 2));
-                                int a = pixels[yy * w + xx];
+                            for (int k = 0; k < 3; k++)
+                            {
+                                int a = pixels[yy * w + xx + k];
                                 double b = Matrix[y * MatrixWidth + x].Value;
-                                newByte += (b * a );
+                                newBytes[k] += (b * a);
                             }
                         }
-                        newPixels[j * w + i] = (byte)Math.Round(newByte,0);
                     }
-                    else
+                    for (int k = 0; k < 3; k++)
                     {
-                        newPixels[j * w + i] = pixels[j * w + i];
+                        newPixels[j * w + i + k] = (byte)Math.Round(newBytes[k], 0);
                     }
                 }
             var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, newPixels, stride);
             return result;
         }
-       
+
+
         public static DoubleValue[] SimpleDistribution(int w, int h)
         {
             DoubleValue[] result = new DoubleValue[w * h];
@@ -199,6 +265,13 @@ namespace WPFLabaSCOIApp.ViewModels
             get
             {
                 return applyMaskCommand ??= new RelayCommand(t => true, (obj) => { Bitmap = ApplyMask(Origin); });
+            }
+        }
+        public ICommand ApplyMedianFilteringCommand
+        {
+            get
+            {
+                return applyMedianFilteringCommand ??= new RelayCommand(t => true, (obj) => { Bitmap = ApplyMedianFiltering(Origin); });
             }
         }
 

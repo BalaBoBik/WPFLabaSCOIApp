@@ -25,6 +25,7 @@ namespace WPFLabaSCOIApp.ViewModels
         private ICommand moveUpCommand;
         private ICommand moveDownCommand;
         private ICommand deleteCommand;
+
         public ObservableCollection<ImageVM> Images { get; set; } = new ObservableCollection<ImageVM>();
         
 

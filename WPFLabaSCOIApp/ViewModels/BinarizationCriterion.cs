@@ -67,29 +67,7 @@ namespace WPFLabaSCOIApp.ViewModels
                     {
                         return SauvolaCriterion(image, windowSize, sensitivity);
                     }
-                },
-                new BinarizationCriterion()
-                {
-                    Name = "Критерий Бредли-Рота",
-                    _isLocal = true,
-                    WindowSize =15,
-                    Sensitivity = 0.15,
-                    SelectedCriterion = (BitmapSource image, int ? windowSize, double ? sensitivity) =>
-                    {
-                        return BradleyRothCriterion(image, windowSize, sensitivity);
-                    }
-                },
-                new BinarizationCriterion()
-                {
-                    Name = "Критерий Вульфа",
-                    _isLocal = true,
-                    WindowSize =15,
-                    Sensitivity = 0.5,
-                    SelectedCriterion = (BitmapSource image, int ? windowSize, double ? sensitivity) =>
-                    {
-                        return WolfCriterion(image, windowSize, sensitivity);
-                    }
-                },
+                }
             };
         }
         public static BitmapSource GavrilovCriterion(BitmapSource image, int? windowSize, double? sensitivity) // Используется только картинка
@@ -246,8 +224,59 @@ namespace WPFLabaSCOIApp.ViewModels
         }
         public static BitmapSource SauvolaCriterion(BitmapSource image, int? windowSize, double? sensitivity)
         {
-            MessageBox.Show($"Sauvola");
-            return image;
+            if ((windowSize != null) && (sensitivity != null))
+            {
+                int w = image.PixelWidth;
+                int h = image.PixelHeight;
+
+                int stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+                byte[] pixels = new byte[(int)image.PixelHeight * stride];
+                image.CopyPixels(pixels, stride, 0);
+
+                stride = (int)image.PixelWidth * (image.Format.BitsPerPixel / 8);
+                byte[] resultPixels = new byte[(int)image.PixelHeight * stride];
+                image.CopyPixels(resultPixels, stride, 0);
+
+                List<double> values = new List<double>();
+                double sigma;
+                double t;
+                for (int j = 0; j < h * 4; j += 4)
+                {
+                    for (int i = 0; i < w * 4; i += 4)
+                    {
+                        values.Clear();
+                        sigma = 0;
+                        t = 0;
+                        for (int y = (int)(j - 4 * (windowSize / 2)); y <= (int)(j + 4 * (windowSize / 2)); y += 4)
+                            for (int x = (int)(i - 4 * (windowSize / 2)); x <= (int)(i + 4 * (windowSize / 2)); x += 4)
+                            {
+                                if ((0 <= y) && (y < h * 4))
+                                    if ((0 <= x) && (x < w * 4))
+                                    {
+                                        values.Add(pixels[y * w + x]);
+                                    }
+                            }
+                        sigma = Math.Sqrt(D(values));
+                        t = (double)(M(values)*(1+sensitivity*(sigma/128-1)));
+
+                        if (t >= resultPixels[j * w + i])
+                        {
+                            resultPixels[j * w + i] = 0;
+                            resultPixels[j * w + i + 1] = 0;
+                            resultPixels[j * w + i + 2] = 0;
+                        }
+                        else
+                        {
+                            resultPixels[j * w + i] = 255;
+                            resultPixels[j * w + i + 1] = 255;
+                            resultPixels[j * w + i + 2] = 255;
+                        }
+                    }
+                }
+                var result = BitmapSource.Create(image.PixelWidth, image.PixelHeight, image.DpiX, image.DpiY, image.Format, null, resultPixels, stride);
+                return result;
+            }
+            else throw new Exception("Размер окна или чувствительность не заданы");
         }
         public static BitmapSource BradleyRothCriterion(BitmapSource image, int? windowSize, double? sensitivity)
         {

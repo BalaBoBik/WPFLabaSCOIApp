@@ -21,6 +21,7 @@
             <Button Click="OpenGradationTransformWindow">Градационные преобразования</Button>
             <Button Click="OpenBinarizationWindow">Бинаризация</Button>
             <Button Click="LinearFiltratingWindow">Линейная фильтрация</Button>
+            <Button Click="FurieImageWindow">Фурье-образ</Button>
         </StackPanel>
         <Image Source="{Binding FinalImage}" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="440" RenderTransformOrigin="-1.372,-0.927" Margin="10,10,0,0"/>
         <ScrollViewer Grid.Column="1" Grid.Row="1">
